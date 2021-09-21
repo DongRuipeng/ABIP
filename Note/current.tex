@@ -1,1 +1,83 @@
-\section{Detailed algorithm}
+\section{Simplifications for the original problem}
+
+\noindent\textbf{Notations.} Let $\e_j$ be a standard unit vector in $\R^p$ with $1$ in the $j$th coordinate and $0$ in all other coordinates. And $\e$ is the vector with all entries equal to $1$.
+
+The original optimization is as follows
+\begin{align*}
+     & \underset{\bOmega}{\min}~\norm{\bOmega}_{1},
+    \\
+     & \text{s.t.}~ \abs{\bSigma_n\bOmega - \I}_{\infty} \leq \lambda_n,
+\end{align*}
+where $\bOmega$ and $\bSigma_n$ are the $p\times p$ precision matrix and sample covariance matrix, respectively. The linear program can be decomposed into $p$ vector minimization problems. For $1\leq j \leq p$, the $j$th linear program is as follows.
+\begin{equation}\label{original:opt}
+    \begin{aligned}
+         & \underset{\bbeta\in\R^p}{\min}~\norm{\bbeta}_1,
+        \\
+         & \text{s.t.}~ \abs{\bSigma_n\bbeta - \e_j}_{\infty} \leq \lambda_n.
+    \end{aligned}
+\end{equation}
+
+Then considering the $j$th optimization, we rewrite the variable $\bbeta$ as $\bbeta = \bbeta_{+} - \bbeta_{-}$ with $\bbeta_{+}, \bbeta_{-} \geq 0$. Thus the $\ell_1$ norm can be written as
+\begin{align}
+    \norm{\bbeta}_1
+    = \e\trans\bbeta_{+} + \e\trans\bbeta_{-}, \label{opt:part:1}
+\end{align}
+because there can be only one part not zero (e.g. $x_{+}=\max\{x,0\},~x_{-}=\max\{-x,0\}$ satisfying $x=x_{+}-x_{-}$). Moreover, utilizing the relaxation variable, the constraint can be written as
+\begin{align}
+    \left\{
+    \begin{aligned}
+         & \bSigma_n\bbeta - \e_j + \w_{+} = \lambda_n \e,
+        \\
+         & \w_{+} + \w_{-} = 2\lambda_n\e,
+        \\
+         & \w_{+}, \w_{-} \geq 0.
+    \end{aligned}
+    \right. \label{opt:part:2}
+\end{align}
+Thus combining \eqref{original:opt}, \eqref{opt:part:1} and \eqref{opt:part:2}, we can get the reformatted optimization as follows
+\begin{equation}\label{opt:1}
+    \begin{aligned}
+         & \min~ \e\trans\bbeta_{+} + \e\trans\bbeta_{-}
+        \\
+         & \text{s.t.}
+        \\
+         & \begin{aligned}
+             & \bSigma_n\bbeta_{+} - \bSigma\bbeta_{-} + \w_{+} = \lambda_n\e + \e_j,
+            \\
+             & \w_{+} + \w_{-} = 2\lambda_n \e,
+            \\
+             & \bbeta_{+}, \, \bbeta_{-}, \, \w_{+}, \, \w_{-} \geq 0,
+        \end{aligned}
+    \end{aligned}
+\end{equation}
+where all of the four vectors $\bbeta_{+},\bbeta_{-},\w_{+},\w_{-}$ are $p$-dimensional. Then we set
+\begin{align*}
+     & \c = \left(\e\trans, \e\trans, \0_p\trans, \0_p\trans\right)\trans\in \R^{4p},
+    \\
+     & \x = \left(\bbeta_{+}\trans, \bbeta_{-}\trans, \w_{+}\trans, \w_{-}\trans\right)\trans \in \R^{4p},
+    \\
+     & \b = \left(\lambda_n\e\trans+\e_j\trans, 2\lambda_n \e\trans\right)\trans \in \R^{2p},
+\end{align*}
+and the constraint matrix as
+\begin{align*}
+    \A =
+    \left[
+        \begin{array}{cccc}
+            \bSigma_n      & -\bSigma_n     & \I_p & \0_{p\times p} \\
+            \0_{p\times p} & \0_{p\times p} & \I_p & \I_p
+        \end{array}
+        \right] \in \R^{2p\times 4p}.
+\end{align*}
+
+With the above definition, the optimization \eqref{opt:1} can be written as
+\begin{align*}
+     & \underset{\x\in\R^{4p}}{\min}~ \c\trans\x
+    \\
+     & \begin{aligned}
+        \text{s.t.}~ & \A\x = \b
+        \\
+                     & \x \geq \0_{4p}
+    \end{aligned}
+\end{align*}
+
+\section{Implementations for ABIP}
