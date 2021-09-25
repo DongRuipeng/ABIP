@@ -15,4 +15,6 @@ end
 
 cmd = sprintf ('%s abip/linsys/direct/external/ldl.c %s abip/linsys/direct/private.c %s %s %s -output abip_direct', cmd, common_abip, flags.link, flags.LOCS, flags.BLASLIB);
 
+disp(cmd);
+
 eval(cmd);

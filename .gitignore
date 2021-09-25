@@ -17,3 +17,4 @@
 *.toc
 *.mat
 *.exe
+*.mexw64

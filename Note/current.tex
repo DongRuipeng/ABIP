@@ -81,3 +81,87 @@ With the above definition, the optimization \eqref{opt:1} can be written as
 \end{align*}
 
 \section{Implementations for ABIP}
+
+\begin{align*}
+    &\Q =
+    \left[
+        \begin{array}{cccc}
+            \0              & \A             & -\b       & \bar{\b}  \\
+            -\A\trans       & \0             & \c        & -\bar{\c} \\
+            \b\trans        & -\c\trans      & 0        & \bar{z}  \\
+            -\bar{\b}\trans & \bar{\c}\trans & -\bar{z} & 0
+        \end{array}
+        \right],
+    \quad
+    \u = \left[
+        \begin{array}{c}
+            \y   \\
+            \x   \\
+            \tau \\
+            \theta
+        \end{array}
+        \right],
+    \quad
+    \v = \left[
+        \begin{array}{c}
+            \r     \\
+            \s     \\
+            \kappa \\
+            \xi
+        \end{array}
+        \right] 
+        \\
+        &\bar{\b} = \b - \A\e, \quad 
+        \bar{\c} = \c - \e, \quad 
+        \bar{z} = \c\trans\e + 1.
+\end{align*}
+
+\subsection{Inner iteration} 
+
+In the inner iteration with fixed $k$, we follow the update rule as follows (from $i$ to $i+1$). 
+
+\noindent\underline{1. Update $\wt{\u}_{i+1}$:} 
+\begin{align*}
+    \wt{\u}_{i+1}^k = (\I + \Q)^{-1} (\u_i^k + \v_i^k). 
+\end{align*}
+\noindent\underline{2. Update $\u_{i+1}^k$:}
+\begin{align*}
+    &\y_{i+1}^k = \wt{\y}_{i+1}^k 
+    \\ 
+    &\x_{i+1}^k = 
+    \frac{1}{2}\left[
+        (\wt{\x}_{i+1}^k - \s_i^k) + 
+        \sqrt{(\wt{\x}_{i+1}^k - \s_i^k)\circ(\wt{\x}_{i+1}^k - \s_i^k) + \frac{4\mu^k}{\beta}}
+    \right], 
+    \\ 
+    &\tau_{i+1}^k = 
+    \frac{1}{2}\left[
+        (\wt{\tau}_{i+1}^k - \kappa_i^k) 
+        + \sqrt{(\wt{\tau}_{i+1}^k - \kappa_i^k)\circ(\wt{\tau}_{i+1}^k - \kappa_i^k) + \frac{4\mu^k}{\beta}}
+    \right], 
+    \\ 
+    &\theta_{i+1}^k = \wt{\theta}_{i+1}^k,
+\end{align*}
+\noindent\underline{3. Update $\v_{i+1}^k$:}
+\begin{align*}
+\v_{i+1}^k = \v_i^k - \wt{\u}_{i+1}^k + \u_{i+1}^k 
+\end{align*}
+
+\subsection{Outer iteration}
+
+In the outer iteration, the index $i+1$ reset to zero and update $k$ to $k+1$. The computation parameter is updated as follows. 
+\begin{align*}
+    \mu^{k+1} = \gamma \cdot \mu^k.
+\end{align*}
+Moreover, we need to reset the initialization as follows. 
+\begin{align*}
+    &\r_0^{k+1} = \0, 
+    \\
+    &\xi_0^{k+1} = -n - 1, ~\text{here the $n$ is the column number of $\A$}, 
+    \\ 
+    &(\y_0^{k+1},\x_0^{k+1}, \s_0^{k+1}, \tau_0^{k+1}, \kappa_0^{k+1}, \theta_0^{k+1}) 
+    = \sqrt{\gamma}\cdot 
+    (\y_{i+1}^k,\x_{i+1}^k, \s_{i+1}^k, \tau_{i+1}^k, \kappa_{i+1}^k, \theta_{i+1}^k)
+\end{align*}
+
+\subsection{The inverse of I + Q}

@@ -37,9 +37,9 @@ else
     data.A = sparse(A);
     data.c = full(c);
     data.b = full(b);
-    params_abips = struct('max_iters', 1000, 'max_outiters', 100);
+    params_abips = struct('max_iters', 100000, 'max_outiters', 10000);
     
     % abips implementation.
-    tic; [x, y, s, info_abips] = abip_matlab_large(data, params_abips); time_abips = toc;
+    tic; [x, y, s, info_abips] = abip_direct(data, params_abips); time_abips = toc;
     [x_abips, objp_abips] = postsolve(x, info);
 end
