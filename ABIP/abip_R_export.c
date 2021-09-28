@@ -147,7 +147,7 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c)
     abip_int status;
 
     ABIPMatrix *A = trans_to_sparse_mat(Sigma, p);
-    ABIPData *d = construt_abip_data(A, b, c);
+    ABIPData *d = construt_abip_data(A, b, c); //! A and c will not changed with different lambda, but the b does !
 
     ABIPSolution sol = {0}; //TODO: free the memory of x, y and s
     ABIPInfo info;
@@ -158,5 +158,5 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c)
 
     status = ABIP(main)(d, &sol, &info);
 
-    free_r(d);
+    free_r(d); //! Once free the memmory, all data will be destroyed in the next computation !
 }
