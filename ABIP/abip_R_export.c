@@ -4,12 +4,6 @@
 #include "./include/abip.h"
 #include "./include/util.h"
 
-typedef struct RData
-{
-    ABIPData *d;
-    ABIPSolution *sol;
-} RData;
-
 abip_int parse_warm_start(const abip_float *p_mex, abip_float **p, abip_int len)
 {
     *p = (abip_float *)abip_calloc(len, sizeof(abip_float));
@@ -24,97 +18,145 @@ abip_int parse_warm_start(const abip_float *p_mex, abip_float **p, abip_int len)
     }
 }
 
-void copy_sparse_A(abip_float *dist, const abip_float *sigma, abip_int *rInd, abip_int *cInd, abip_int dim)
+ABIPMatrix *trans_to_sparse_mat(abip_float *Sigma, abip_int *p)
 {
-    abip_int k = 0;
-    abip_int len_Sig = dim * dim;
-    abip_int len_dist = 2 * dim * dim + 3 * dim;
+    abip_int len_sig = (*p) * (*p);
+    abip_int len_x = 2 * len_sig + 3 * (*p);
 
-    for (abip_int i = 0; i < dim; i++)
+    // declare the memory
+    abip_float *x = malloc(len_x * sizeof(abip_float));
+    abip_int *jc = malloc(4 * (*p) * sizeof(abip_int) + 1);
+    abip_int *ir = malloc(len_x * sizeof(abip_int));
+
+    // copy the value
+    memcpy(x, Sigma, len_sig * sizeof(abip_float));
+    for (abip_int i = len_sig; i < 2 * len_sig; i++)
     {
-        for (abip_int j = 0; j < dim; j++)
+        x[i] = -Sigma[i - len_sig];
+    }
+    for (abip_int i = 2 * len_sig; i < len_x; i++)
+    {
+        x[i] = 1;
+    }
+
+    // copy the jc
+    jc[0] = 0;
+    for (abip_int i = 1; i < 2 * (*p) + 1; i++)
+    {
+        jc[i] = jc[i - 1] + (*p);
+    }
+    for (abip_int i = 2 * (*p) + 1; i < 3 * (*p) + 1; i++)
+    {
+        jc[i] = jc[i - 1] + 2;
+    }
+    for (abip_int i = 3 * (*p) + 1; i < 4 * (*p) + 1; i++)
+    {
+        jc[i] = jc[i - 1] + 1;
+    }
+
+    // copy the ir
+    abip_int *tmp = malloc((*p) * sizeof(abip_int));
+    // init temp vector
+    for (abip_int i = 0; i < (*p); i++)
+    {
+        tmp[i] = i;
+    }
+
+    for (abip_int i = 0; i < 2 * (*p); i++)
+    {
+        memcpy(&ir[i * (*p)], tmp, (*p) * sizeof(abip_int));
+    }
+    for (abip_int i = 2 * len_sig; i < 2 * len_sig + 2 * (*p); i++)
+    {
+        ir[i] = i / 2 % (*p) + (*p) * (i % 2);
+    }
+    for (abip_int i = 2 * len_sig + 2 * (*p); i < len_x; i++)
+    {
+        ir[i] = i % (2 * len_sig + 2 * (*p)) + *p;
+    }
+
+    ABIPMatrix *A = malloc(sizeof(ABIPMatrix));
+    A->x = x;
+    A->p = jc;
+    A->i = ir;
+    A->m = 2 * (*p);
+    A->n = 4 * (*p);
+
+    free(tmp);
+
+    return A;
+}
+
+ABIPData *construt_abip_data(ABIPMatrix *A, abip_float *b, abip_float *c)
+{
+    ABIPData *d = malloc(sizeof(ABIPData));
+    d->A = A;
+    d->b = b;
+    d->c = c;
+    d->m = A->m;
+    d->n = A->n;
+    d->sp = (abip_float)A->p[A->n] / (A->m * A->n);
+    d->stgs = (ABIPSettings *)malloc(sizeof(ABIPSettings));
+    ABIP(set_default_settings)
+    (d);
+
+    return d;
+}
+
+void free_r(ABIPData *d)
+{
+    if (d)
+    {
+        if (d->A)
         {
-            dist[k] = sigma[j * dim + i];
-            dist[k + len_Sig] = -dist[k];
-            cInd[k] = j;
-            rInd[k] = i;
-            cInd[k + len_Sig] = j + dim;
-            rInd[k + len_Sig] = i;
-            k = k + 1;
+            if (d->A->i)
+            {
+                free(d->A->i);
+            }
+            if (d->A->p)
+            {
+                free(d->A->p);
+            }
+            if (d->A->x)
+            {
+                free(d->A->x);
+            }
+
+            free(d->A);
         }
-    }
-    k = 2 * k;
-    for (abip_int i = (2 * len_Sig); i < len_dist; i++)
-    {
-        dist[i] = 1;
-    }
-    for (abip_int i = 0; i < dim; i++)
-    {
-        rInd[k] = i;
-        rInd[k + dim] = dim + i;
-        rInd[k + 2 * dim] = dim + i;
-        cInd[k] = 2 * dim + i;
-        cInd[k + dim] = 2 * dim + i;
-        cInd[k + 2 * dim] = 3 * dim + i;
-        k = k + 1;
+        if (d->b)
+        {
+            free(d->b);
+        }
+        if (d->c)
+        {
+            free(d->c);
+        }
+        if (d->stgs)
+        {
+            free(d->stgs);
+        }
+
+        free(d);
     }
 }
 
-RData *trans_R_data(abip_float *Sigma, abip_float *b, abip_float *c, abip_float *x, abip_float *y, abip_float *s, abip_int *p)
-{
-    RData *data;
-    data = malloc(sizeof(RData));
-    data->d = malloc(sizeof(ABIPData));
-    data->sol = malloc(sizeof(ABIPSolution));
-
-    abip_int m = 2 * (*p);
-    abip_int n = 4 * (*p);
-
-    abip_int len_Sig = (*p) * (*p);
-    abip_int len_b = m;
-    abip_int len_c = n;
-    abip_int len_x = n;
-    abip_int len_s = len_x;
-    abip_int len_y = m;
-
-    abip_int len_A = 2 * len_Sig + 3 * (*p);
-
-    // copy sparse matrix A to data
-    abip_float *A = (abip_float *)malloc(len_A * sizeof(abip_float));
-    abip_int *rInd = (abip_int *)malloc(len_A * sizeof(abip_int));
-    abip_int *cInd = (abip_int *)malloc(len_A * sizeof(abip_int));
-
-    copy_sparse_A(data->d->A->x, Sigma, rInd, cInd, (*p));
-    // data->d->A->x = A;
-    data->d->A->m = m;
-    data->d->A->n = n;
-    data->d->A->i = rInd;
-    data->d->A->p = cInd; //! the format of sparse matrix in ABIP is different
-
-    //copy b and c to data
-    data->d->b = (abip_float *)malloc(len_b * sizeof(abip_float));
-    data->d->c = (abip_float *)malloc(len_c * sizeof(abip_float));
-    memcpy(data->d->b, b, len_b * sizeof(abip_float));
-    memcpy(data->d->c, c, len_c * sizeof(abip_float));
-
-    data->sol->s = (abip_float *)s;
-    data->sol->x = (abip_float *)x;
-    data->sol->x = (abip_float *)y;
-
-    return data;
-}
-
-void abip_R(RData *data)
+void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c)
 {
     abip_int i;
     abip_int status;
 
+    ABIPMatrix *A = trans_to_sparse_mat(Sigma, p);
+    ABIPData *d = construt_abip_data(A, b, c);
+
     ABIPSolution sol = {0}; //TODO: free the memory of x, y and s
     ABIPInfo info;
 
-    data->d->stgs->warm_start = parse_warm_start(data->sol->x, &(sol.x), data->d->n);
-    data->d->stgs->warm_start |= parse_warm_start(data->sol->y, &(sol.y), data->d->m);
-    data->d->stgs->warm_start |= parse_warm_start(data->sol->s, &(sol.s), data->d->n);
+    d->stgs->warm_start = parse_warm_start(data->sol->x, &(sol.x), data->d->n);
+    d->stgs->warm_start |= parse_warm_start(data->sol->y, &(sol.y), data->d->m);
+    d->stgs->warm_start |= parse_warm_start(data->sol->s, &(sol.s), data->d->n);
 
-    status = ABIP(main)(data->d, &sol, &info);
+    status = ABIP(main)(d, &sol, &info);
+
+    free_r(d);
 }
