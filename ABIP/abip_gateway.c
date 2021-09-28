@@ -25,7 +25,7 @@ void sp_mat(double *Sigma, unsigned *p)
     {
         A[i] = 1;
     }
-    
+
     for (unsigned i = 0; i < (*p); i++)
     {
         rInd[k] = i;
@@ -37,10 +37,28 @@ void sp_mat(double *Sigma, unsigned *p)
         k = k + 1;
     }
 
-    for (unsigned i = 0; i < (2 * (*p) * (*p) + 3 * (*p)); i++)
+    for (unsigned i = 0; i < 2 * (*p) * (*p) + 3 * (*p); i++)
     {
-        printf("location: (%i, %i);\t value: %f \n", rInd[i], cInd[i], A[i]);
+        printf("location: (%i, %i);\t value: %f \n", rInd[i] + 1, cInd[i] + 1, A[i]);
     }
+
+    // for (unsigned i = 0; i < (*p); i++)
+    // {
+    //     for (unsigned j = 0; j < (*p); j++)
+    //     {
+    //         for (unsigned l = 0; l < (2 * (*p) * (*p) + 3 * (*p)); l++)
+    //         {
+    //             if ((rInd[l] == i) && (cInd[l] == j))
+    //             {
+    //                 printf("%f\t", A[l]);
+    //             }
+    //             else{
+    //                 printf("*\t");
+    //             }
+    //         }
+    //     }
+    //     printf("\n");
+    // }
 
     free(A);
     free(cInd);

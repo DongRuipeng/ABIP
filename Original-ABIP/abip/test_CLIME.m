@@ -1,6 +1,6 @@
-rho = 0.6;
+rho = 0.5;
 n = 100;
-p = 100;
+p = 3;
 Omega_0 = rho .^ abs((1:p) - (1:p)');
 Sigma_0 = inv(Omega_0);
 X = mvnrnd(zeros(1,p),Sigma_0, 2 * n);

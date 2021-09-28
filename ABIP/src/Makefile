@@ -1,4 +1,3 @@
 .PHONY:clean
 clean:
-    rm -rf *.o
-    rm -rf *.dll
+	rm -rf *.o *.exe *.dll
