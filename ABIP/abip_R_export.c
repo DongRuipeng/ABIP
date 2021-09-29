@@ -87,22 +87,6 @@ ABIPMatrix *trans_to_sparse_mat(abip_float *Sigma, abip_int *p)
     return A;
 }
 
-ABIPData *construt_abip_data(ABIPMatrix *A, abip_float *b, abip_float *c)
-{
-    ABIPData *d = malloc(sizeof(ABIPData));
-    d->A = A;
-    d->b = b;
-    d->c = c;
-    d->m = A->m;
-    d->n = A->n;
-    d->sp = (abip_float)A->p[A->n] / (A->m * A->n);
-    d->stgs = (ABIPSettings *)malloc(sizeof(ABIPSettings));
-    ABIP(set_default_settings)
-    (d);
-
-    return d;
-}
-
 void free_abip_data(ABIPData *d)
 {
     if (d)
@@ -157,24 +141,83 @@ void free_abip_sol(ABIPSolution sol)
     }
 }
 
-void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c, ABIPSolution *init_sol)
+void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambda)
 {
-    // abip_int i;
     abip_int status;
-
-    ABIPMatrix *A = trans_to_sparse_mat(Sigma, p);
-    ABIPData *d = construt_abip_data(A, b, c); //! A and c will not changed with different lambda, but the b does !
-
-    ABIPSolution sol = {0}; //TODO: free the memory of x, y and s
     ABIPInfo info;
 
-    d->stgs->warm_start = parse_warm_start(init_sol->x, &(sol.x), d->n);
-    //TODO: modify the function (a vector including pointer to sol.x,y,s)
-    d->stgs->warm_start |= parse_warm_start(init_sol->y, &(sol.y), d->m);
-    d->stgs->warm_start |= parse_warm_start(init_sol->s, &(sol.s), d->n);
+    // construct A
+    ABIPMatrix *A = trans_to_sparse_mat(Sigma, p);
+
+    // construct c
+    abip_float *c = malloc(A->n * sizeof(abip_float));
+    for (abip_int i = 0; i < 2 * (*p); i++)
+    {
+        c[i] = 1;
+    }
+    for (abip_int i = 2 * (*p); i < A->n; i++)
+    {
+        c[i] = 0;
+    }
+
+    // construct b_base
+    abip_float *b_base = malloc(A->m * sizeof(abip_float));
+    for (abip_int i = 0; i < (*p); i++)
+    {
+        b_base[i] = 1;
+    }
+    for (abip_int i = (*p); i < A->m; i++)
+    {
+        b_base[i] = 2;
+    }
+
+    // declare the solution path
+    ABIPSolution sol_path[*nlambda + 1];
+    for (abip_int i = 0; i < (*nlambda + 1); i++)
+    {
+        sol_path[i].s = 0;
+        sol_path[i].x = 0;
+        sol_path[i].y = 0;
+    }
+
+    // declare the singal solution
+    ABIPSolution sol = {0};
+
+    // declare the memory of b
+    abip_float *b = malloc(A->m * sizeof(abip_float));
+
+    // declare the memory of d and init it
+    ABIPData *d = malloc(sizeof(ABIPData));
+    d->A = A;
+    d->b = b;
+    d->c = c;
+    d->m = A->m;
+    d->n = A->n;
+    d->sp = (abip_float)A->p[A->n] / (A->m * A->n);
+    d->stgs = (ABIPSettings *)malloc(sizeof(ABIPSettings));
+    ABIP(set_default_settings)
+    (d);
+
+    // update b
+    memcpy(b, b_base, A->m * sizeof(abip_float));
+    ABIP(scale_array)
+    (b, lambda[0], A->m); // ABIP(scale_array)(b, lambda[l], A->m);
+    b[0] += 1;            // b[j] += 1;
+
+    d->stgs->warm_start = parse_warm_start(sol_path[0].x, &(sol.x), d->n);
+    d->stgs->warm_start |= parse_warm_start(sol_path[0].y, &(sol.y), d->m);
+    d->stgs->warm_start |= parse_warm_start(sol_path[0].s, &(sol.s), d->n);
 
     status = ABIP(main)(d, &sol, &info);
 
-    free_abip_data(d); //! Once free the memmory, all data will be destroyed in the next computation !
+    free(c);
+    free(b_base);
+    free(b);
+
+    free_abip_data(d);
     free_abip_sol(sol);
+    for (abip_int i = 0; i < (*nlambda + 1); i++)
+    {
+        free_abip_sol(sol_path[i]); 
+    }
 }

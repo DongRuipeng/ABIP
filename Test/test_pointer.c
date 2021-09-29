@@ -2,7 +2,7 @@
 
 void main()
 {
-  int *pn = 0;
+  int *pn;
   if (pn)
   {
     printf("the value of null pointer is not zero !\n");
