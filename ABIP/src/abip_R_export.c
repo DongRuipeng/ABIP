@@ -1,19 +1,19 @@
-#include "./include/glbopts.h"
-#include "./include/linalg.h"
-#include "./include/amatrix.h"
-#include "./include/abip.h"
-#include "./include/util.h"
+#include "glbopts.h"
+#include "linalg.h"
+#include "amatrix.h"
+#include "abip.h"
+#include "util.h"
 
-abip_int parse_warm_start(const abip_float *p_init, abip_float **p, abip_int len)
+abip_int parse_warm_start(const abip_float *p_mex, abip_float **p, abip_int len)
 {
     *p = (abip_float *)abip_calloc(len, sizeof(abip_float));
-    if (p_init == ABIP_NULL)
+    if (p_mex == ABIP_NULL)
     {
         return 0;
     }
     else
     {
-        memcpy(*p, p_init, len * sizeof(abip_float));
+        memcpy(*p, p_mex, len * sizeof(abip_float));
         return 1;
     }
 }
@@ -103,7 +103,7 @@ ABIPData *construt_abip_data(ABIPMatrix *A, abip_float *b, abip_float *c)
     return d;
 }
 
-void free_abip_data(ABIPData *d)
+void free_r(ABIPData *d)
 {
     if (d)
     {
@@ -141,22 +141,6 @@ void free_abip_data(ABIPData *d)
     }
 }
 
-void free_abip_sol(ABIPSolution sol)
-{
-    if (sol.s)
-    {
-        free(sol.s);
-    }
-    if (sol.x)
-    {
-        free(sol.x);
-    }
-    if (sol.y)
-    {
-        free(sol.y);
-    }
-}
-
 void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c, ABIPSolution *init_sol)
 {
     // abip_int i;
@@ -168,13 +152,12 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c, ABIPSo
     ABIPSolution sol = {0}; //TODO: free the memory of x, y and s
     ABIPInfo info;
 
-    d->stgs->warm_start = parse_warm_start(init_sol->x, &(sol.x), d->n);
+    d->stgs->warm_start = parse_warm_start(init_sol->x, &(sol.x), d->n); 
     //TODO: modify the function (a vector including pointer to sol.x,y,s)
     d->stgs->warm_start |= parse_warm_start(init_sol->y, &(sol.y), d->m);
     d->stgs->warm_start |= parse_warm_start(init_sol->s, &(sol.s), d->n);
 
     status = ABIP(main)(d, &sol, &info);
 
-    free_abip_data(d); //! Once free the memmory, all data will be destroyed in the next computation !
-    free_abip_sol(sol);
+    free_r(d); //! Once free the memmory, all data will be destroyed in the next computation !
 }
