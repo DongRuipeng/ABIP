@@ -152,7 +152,7 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *b, abip_float *c)
     ABIPSolution sol = {0}; //TODO: free the memory of x, y and s
     ABIPInfo info;
 
-    d->stgs->warm_start = parse_warm_start(data->sol->x, &(sol.x), data->d->n);
+    d->stgs->warm_start = parse_warm_start(data->sol->x, &(sol.x), data->d->n); //TODO: modify the function
     d->stgs->warm_start |= parse_warm_start(data->sol->y, &(sol.y), data->d->m);
     d->stgs->warm_start |= parse_warm_start(data->sol->s, &(sol.s), data->d->n);
 
