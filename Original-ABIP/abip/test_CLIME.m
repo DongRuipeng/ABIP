@@ -1,6 +1,6 @@
 rho = 0.5;
 n = 100;
-p = 3;
+p = 200;
 Omega_0 = rho .^ abs((1:p) - (1:p)');
 Sigma_0 = inv(Omega_0);
 X = mvnrnd(zeros(1,p),Sigma_0, 2 * n);
@@ -28,7 +28,7 @@ data.c = c;
 lbounds = zeros(4*p,1);
 ubounds = Inf(4*p,1);
 
-[A,b,c,info] = presolve(A,b,c,lbounds,ubounds);
+% [A,b,c,info] = presolve(A,b,c,lbounds,ubounds);
 
 if ~info.feasible
     fprintf('The problem is infeasible!\n');
@@ -41,5 +41,5 @@ else
     
     % abips implementation.
     tic; [x, y, s, info_abips] = abip_direct(data, params_abips); time_abips = toc;
-    [x_abips, objp_abips] = postsolve(x, info);
+%     [x_abips, objp_abips] = postsolve(x, info);
 end

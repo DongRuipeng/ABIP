@@ -1,9 +1,17 @@
-dyn.load("./ABIP/abip_gateway.dll")
 require(MASS)
+dyn.load("./ABIP-beta/src/abip.dll")
 
+n <- 100
 p <- 200
 rho <- 0.5
-Sigma <- rho ^ abs(outer(1:p, 1:p, "-"))
-result <- .C("sp_mat", as.double(Sigma), as.integer(p))
+Omega_0 <- rho ^ abs(outer(1:p, 1:p, "-"))
+Sigma_0 <- solve(Omega_0)
+X <- mvrnorm(n, rep(0, p), Sigma_0)
+Sigma_n <- t(X) %*% X / n 
 
-dyn.unload("./ABIP/abip_gateway.dll")
+lambda <- c(1,2)
+nlambda <- 2
+
+.C("abip_R", as.double(Sigma_n), as.integer(p), as.double(lambda), as.integer(nlambda))
+
+dyn.unload("./ABIP-beta/src/abip.dll")

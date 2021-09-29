@@ -1,8 +1,8 @@
-#include "./include/glbopts.h"
-#include "./include/linalg.h"
-#include "./include/amatrix.h"
-#include "./include/abip.h"
-#include "./include/util.h"
+#include "glbopts.h"
+#include "linalg.h"
+#include "amatrix.h"
+#include "abip.h"
+#include "util.h"
 
 abip_int parse_warm_start(const abip_float *p_init, abip_float **p, abip_int len)
 {
@@ -210,10 +210,7 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
 
     status = ABIP(main)(d, &sol, &info);
 
-    free(c);
     free(b_base);
-    free(b);
-
     free_abip_data(d);
     free_abip_sol(sol);
     for (abip_int i = 0; i < (*nlambda + 1); i++)
