@@ -3,6 +3,7 @@
 #include "amatrix.h"
 #include "abip.h"
 #include "util.h"
+#include <time.h>
 
 abip_int parse_warm_start(const abip_float *p_init, abip_float **p, abip_int len)
 {
@@ -141,6 +142,14 @@ void free_abip_sol(ABIPSolution sol)
     }
 }
 
+void get_beta(abip_float *beta, abip_int *x, abip_int dim)
+{
+    for (abip_int i = 0; i < dim; i++)
+    {
+        beta[i] = x[i] - x[i + dim];
+    }
+}
+
 void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambda)
 {
     abip_int status;
@@ -183,6 +192,9 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
     // declare the singal solution
     ABIPSolution sol = {0};
 
+    // declare Omega list
+    abip_float Omega_list[*nlambda][(*p)][(*p)];
+
     // declare the memory of b
     abip_float *b = malloc(A->m * sizeof(abip_float));
 
@@ -198,23 +210,54 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
     ABIP(set_default_settings)
     (d);
 
-    // update b
-    memcpy(b, b_base, A->m * sizeof(abip_float));
-    ABIP(scale_array)
-    (b, lambda[0], A->m); // ABIP(scale_array)(b, lambda[l], A->m);
-    b[0] += 1;            // b[j] += 1;
+    clock_t start, end;
+    double cpu_time_used;
+    start = clock();
 
-    d->stgs->warm_start = parse_warm_start(sol_path[0].x, &(sol.x), d->n);
-    d->stgs->warm_start |= parse_warm_start(sol_path[0].y, &(sol.y), d->m);
-    d->stgs->warm_start |= parse_warm_start(sol_path[0].s, &(sol.s), d->n);
+    for (abip_int j = 0; j < (*p); j++)
+    {
+        for (abip_int l = 1; l < (*nlambda + 1); l++)
+        {
+            // update b
+            memcpy(b, b_base, A->m * sizeof(abip_float));
+            ABIP(scale_array)
+            (b, lambda[l - 1], A->m); // ABIP(scale_array)(b, lambda[l], A->m);
+            b[j] += 1;                // b[j] += 1;
 
-    status = ABIP(main)(d, &sol, &info);
+            d->stgs->warm_start = parse_warm_start(sol_path[l - 1].x, &(sol.x), d->n);
+            d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].y, &(sol.y), d->m);
+            d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].s, &(sol.s), d->n);
+
+            if (d->stgs->warm_start)
+            {
+                printf("Computing with warm start.\n");
+            }
+            
+
+            status = ABIP(main)(d, &sol, &info);
+
+            sol_path[l].x = malloc(d->n * sizeof(abip_float));
+            sol_path[l].y = malloc(d->m * sizeof(abip_float));
+            sol_path[l].s = malloc(d->n * sizeof(abip_float));
+
+            memcpy(sol_path[l].x, sol.x, d->n * sizeof(abip_float));
+            memcpy(sol_path[l].y, sol.y, d->m * sizeof(abip_float));
+            memcpy(sol_path[l].s, sol.s, d->n * sizeof(abip_float));
+
+            get_beta(Omega_list[l - 1][j], sol.x, (*p));
+        }
+    }
+
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+
+    printf("The CPU time used is %f secs.\n", cpu_time_used);
 
     free(b_base);
     free_abip_data(d);
     free_abip_sol(sol);
     for (abip_int i = 0; i < (*nlambda + 1); i++)
     {
-        free_abip_sol(sol_path[i]); 
+        free_abip_sol(sol_path[i]);
     }
 }

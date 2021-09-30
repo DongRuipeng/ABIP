@@ -39,7 +39,7 @@ extern "C" {
 #define EPS_COR (0.2)
 #define EPS_PEN (0.1)
 #define ADAPTIVE_LOOKBACK (20)
-#define VERBOSE (1)
+#define VERBOSE (0)
 #define WARM_START (0)
 
 #ifdef MATLAB_MEX_FILE
