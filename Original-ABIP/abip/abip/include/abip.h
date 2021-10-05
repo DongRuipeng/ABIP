@@ -132,6 +132,7 @@ struct ABIP_WORK
       abip_float *c;
       abip_int m; 
       abip_int n;
+      abip_int l;
       ABIPMatrix *A;
       abip_float sp; 
 

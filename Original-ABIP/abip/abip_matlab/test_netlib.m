@@ -44,7 +44,7 @@ for di = 1:length(Problist)
     %% load data
     probID = Problist(di);
     name = Probname{probID};
-    load(strcat('../../netlib/feasible/', Probname{Problist(di)},'.mat'));
+    load(strcat('../example/netlib/feasible/', Probname{Problist(di)},'.mat'));
     A = Problem.A; 
     b = Problem.b; 
     c = Problem.aux.c; 
