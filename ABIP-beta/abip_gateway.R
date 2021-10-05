@@ -3,7 +3,7 @@ setwd("D:/Git/ABIP")
 dyn.load("./ABIP-beta/src/abip.dll")
 
 n <- 100
-p <- 4
+p <- 400
 rho <- 0.5
 Omega_0 <- rho ^ abs(outer(1:p, 1:p, "-"))
 Sigma_0 <- solve(Omega_0)

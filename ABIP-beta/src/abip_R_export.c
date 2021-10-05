@@ -228,10 +228,10 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
             d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].y, &(sol.y), d->m);
             d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].s, &(sol.s), d->n);
 
-            if (d->stgs->warm_start)
-            {
-                printf("Computing with warm start.\n");
-            }
+            // if (d->stgs->warm_start)
+            // {
+            //     printf("Computing with warm start (j=%i, l=%i).\n", j, l-1);
+            // }
             
 
             status = ABIP(main)(d, &sol, &info);

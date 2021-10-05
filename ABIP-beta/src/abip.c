@@ -1319,6 +1319,7 @@ static ABIPWork *init_work
       
       ABIPWork *w = (ABIPWork *) abip_calloc(1, sizeof(ABIPWork));
       abip_int l = d->n + d->m + 1;
+      w->l = l;
 
       if (d->stgs->verbose) 
       {
@@ -1690,7 +1691,7 @@ abip_int ABIP(solve)
 
                   if (w->stgs->adaptive) 
                   {
-                              for (i = w->m; i < w->n; ++i) 
+                              for (i = w->m; i < w->l; ++i) 
                               {
                                     w->u[i] = SQRTF(w->beta) * w->u[i]; 
                                     w->v[i] = SQRTF(w->beta) * w->v[i]; 
@@ -1700,7 +1701,7 @@ abip_int ABIP(solve)
                               {
                                                 RETURN failure(w, w->m, w->n, sol, info, ABIP_FAILED, "error in adaptive", "Failure");
                               }
-                              for (i = w->m; i < w->n; ++i) 
+                              for (i = w->m; i < w->l; ++i) 
                               {
                                     w->u[i] = SQRTF(1.0/w->beta) * w->u[i]; 
                                     w->v[i] = SQRTF(1.0/w->beta) * w->v[i]; 
