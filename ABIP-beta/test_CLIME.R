@@ -2,7 +2,7 @@ require(MASS)
 setwd("D:/Git/ABIP")
 
 n <- 100
-p <- 10
+p <- 100
 rho <- 0.5
 Sigma_0 <- rho ^ abs(outer(1:p, 1:p, "-"))
 Omega_0 <- solve(Sigma_0)
@@ -10,6 +10,7 @@ X <- mvrnorm(n, rep(0, p), Sigma_0)
 Sigma_n <- t(X) %*% X / n
 
 lambda <- c(1e-3, 1e-2, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8)
+lambda <- sort(lambda, decreasing = TRUE)
 nlambda <- length(lambda)
 Omega <- rep(0, nlambda * p * p)
 time <- 0

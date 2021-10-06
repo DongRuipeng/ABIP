@@ -8,20 +8,6 @@
 // #include <R_ext/Lapack.h>
 // #include <R_ext/BLAS.h>
 
-abip_int parse_warm_start(const abip_float *p_init, abip_float **p, abip_int len)
-{
-    *p = (abip_float *)abip_calloc(len, sizeof(abip_float));
-    if (p_init == ABIP_NULL)
-    {
-        return 0;
-    }
-    else
-    {
-        memcpy(*p, p_init, len * sizeof(abip_float));
-        return 1;
-    }
-}
-
 ABIPMatrix *trans_to_sparse_mat(abip_float *Sigma, abip_int *p)
 {
     abip_int len_sig = (*p) * (*p);
@@ -129,12 +115,8 @@ void free_abip_data(ABIPData *d)
     }
 }
 
-void free_abip_sol(ABIPSolution sol)
+void free_sol(ABIPSolution sol)
 {
-    if (sol.s)
-    {
-        free(sol.s);
-    }
     if (sol.x)
     {
         free(sol.x);
@@ -143,13 +125,9 @@ void free_abip_sol(ABIPSolution sol)
     {
         free(sol.y);
     }
-}
-
-void get_beta(abip_float *beta, abip_int *x, abip_int dim)
-{
-    for (abip_int i = 0; i < dim; i++)
+    if (sol.s)
     {
-        beta[i] = x[i] - x[i + dim];
+        free(sol.s);
     }
 }
 
@@ -173,7 +151,7 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
     }
 
     // construct b_base
-    abip_float *b_base = malloc(A->m * sizeof(abip_float));
+    abip_float b_base[A->m]; // = malloc(A->m * sizeof(abip_float));
     for (abip_int i = 0; i < (*p); i++)
     {
         b_base[i] = 1;
@@ -183,16 +161,6 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
         b_base[i] = 2;
     }
 
-    // declare the solution path
-    ABIPSolution sol_path[*nlambda + 1];
-    for (abip_int i = 0; i < (*nlambda + 1); i++)
-    {
-        sol_path[i].s = 0;
-        sol_path[i].x = 0;
-        sol_path[i].y = 0;
-    }
-
-    // declare the singal solution
     ABIPSolution sol = {0};
 
     // declare the memory of b
@@ -210,6 +178,7 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
     ABIP(set_default_settings)
     (d);
     d->stgs->verbose = 0;
+    d->stgs->warm_start = 0;
 
     clock_t start, end;
     // double time;
@@ -222,37 +191,24 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
             // update b
             memcpy(b, b_base, A->m * sizeof(abip_float));
             ABIP(scale_array)
-            (b, lambda[l - 1], A->m); 
-            b[j] += 1;                
+            (b, lambda[l - 1], A->m);
+            b[j] += 1;
 
-            d->stgs->warm_start = parse_warm_start(sol_path[l - 1].x, &(sol.x), d->n);
-            d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].y, &(sol.y), d->m);
-            d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].s, &(sol.s), d->n);
+            sol.x = malloc(d->n * sizeof(abip_float));
+            sol.y = malloc(d->m * sizeof(abip_float));
+            sol.s = malloc(d->n * sizeof(abip_float));
 
             status = ABIP(main)(d, &sol, &info);
-
-            sol_path[l].x = malloc(d->n * sizeof(abip_float));
-            sol_path[l].y = malloc(d->m * sizeof(abip_float));
-            sol_path[l].s = malloc(d->n * sizeof(abip_float));
-
-            memcpy(sol_path[l].x, sol.x, d->n * sizeof(abip_float));
-            memcpy(sol_path[l].y, sol.y, d->m * sizeof(abip_float));
-            memcpy(sol_path[l].s, sol.s, d->n * sizeof(abip_float));
 
             for (abip_int k = 0; k < (*p); k++)
             {
                 Omega[k + j * (*p) + (l - 1) * (*p) * (*p)] = sol.x[k] - sol.x[k + (*p)];
             }
+            free_sol(sol);
         }
     }
     end = clock();
     *time = ((double)(end - start)) / CLOCKS_PER_SEC;
 
-    free(b_base);
     free_abip_data(d);
-    free_abip_sol(sol);
-    for (abip_int i = 0; i < (*nlambda + 1); i++)
-    {
-        free_abip_sol(sol_path[i]);
-    }
 }
