@@ -150,7 +150,7 @@ void get_beta(abip_float *beta, abip_int *x, abip_int dim)
     }
 }
 
-void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambda, abip_float *Omega)
+void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambda, abip_float *Omega, abip_float *time)
 {
     abip_int status;
     ABIPInfo info;
@@ -192,9 +192,6 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
     // declare the singal solution
     ABIPSolution sol = {0};
 
-    // // declare Omega list
-    // abip_float Omega_list[*nlambda][(*p)][(*p)];
-
     // declare the memory of b
     abip_float *b = malloc(A->m * sizeof(abip_float));
 
@@ -209,9 +206,10 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
     d->stgs = (ABIPSettings *)malloc(sizeof(ABIPSettings));
     ABIP(set_default_settings)
     (d);
+    d->stgs->verbose = 0;
 
     clock_t start, end;
-    double cpu_time_used;
+    // double time;
     start = clock();
 
     for (abip_int j = 0; j < (*p); j++)
@@ -221,17 +219,12 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
             // update b
             memcpy(b, b_base, A->m * sizeof(abip_float));
             ABIP(scale_array)
-            (b, lambda[l - 1], A->m); // ABIP(scale_array)(b, lambda[l], A->m);
-            b[j] += 1;                // b[j] += 1;
+            (b, lambda[l - 1], A->m); 
+            b[j] += 1;                
 
             d->stgs->warm_start = parse_warm_start(sol_path[l - 1].x, &(sol.x), d->n);
             d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].y, &(sol.y), d->m);
             d->stgs->warm_start |= parse_warm_start(sol_path[l - 1].s, &(sol.s), d->n);
-
-            // if (d->stgs->warm_start)
-            // {
-            //     printf("Computing with warm start (j=%i, l=%i).\n", j, l-1);
-            // }
 
             status = ABIP(main)(d, &sol, &info);
 
@@ -243,19 +236,14 @@ void abip_R(abip_float *Sigma, abip_int *p, abip_float *lambda, abip_int *nlambd
             memcpy(sol_path[l].y, sol.y, d->m * sizeof(abip_float));
             memcpy(sol_path[l].s, sol.s, d->n * sizeof(abip_float));
 
-            // abip_float tmp[(*p)];
             for (abip_int k = 0; k < (*p); k++)
             {
                 Omega[k + j * (*p) + (l - 1) * (*p) * (*p)] = sol.x[k] - sol.x[k + (*p)];
-                // printf("tmp[%i]=%f\n", k, tmp[k]);
             }
         }
     }
-    // memcpy(x, sol.x, 2 * (*p) * sizeof(abip_float));
     end = clock();
-    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-
-    printf("The CPU time used is %f secs.\n", cpu_time_used);
+    *time = ((double)(end - start)) / CLOCKS_PER_SEC;
 
     free(b_base);
     free_abip_data(d);
