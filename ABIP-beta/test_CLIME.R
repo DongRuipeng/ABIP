@@ -2,7 +2,7 @@ require(MASS)
 setwd("D:/Git/ABIP")
 
 n <- 100
-p <- 80
+p <- 10
 rho <- 0.5
 Sigma_0 <- rho ^ abs(outer(1:p, 1:p, "-"))
 Omega_0 <- solve(Sigma_0)
