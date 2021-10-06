@@ -1,7 +1,7 @@
 clc
 rho = 0.5;
 n = 100;
-p = 80;
+p = 10;
 Sigma_0 = rho .^ abs((1:p) - (1:p)');
 Omega_0 = inv(Sigma_0);
 X = mvnrnd(zeros(1,p),Sigma_0, n);

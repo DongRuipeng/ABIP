@@ -4,9 +4,9 @@
 #include "abip.h"
 #include "util.h"
 #include <time.h>
-#include <R.h>
-#include <R_ext/Lapack.h>
-#include <R_ext/BLAS.h>
+// #include <R.h>
+// #include <R_ext/Lapack.h>
+// #include <R_ext/BLAS.h>
 
 abip_int parse_warm_start(const abip_float *p_init, abip_float **p, abip_int len)
 {
