@@ -1,6 +1,8 @@
 require(MASS)
 setwd("D:/Git/ABIP")
 
+dll.path <- "./ABIP-beta/src/abip.dll"
+
 n <- 100
 p <- 100
 rho <- 0.5
@@ -15,9 +17,9 @@ nlambda <- length(lambda)
 Omega <- rep(0, nlambda * p * p)
 time <- 0
 
-dyn.load("./ABIP-beta/src/abip.dll")
+dyn.load(dll.path)
 res <- .C("abip_R", as.double(Sigma_n), as.integer(p), as.double(lambda), as.integer(nlambda), Omega = as.double(Omega), time = as.double(time))
-dyn.unload("./ABIP-beta/src/abip.dll")
+dyn.unload(dll.path)
 
 Omega <- matrix(res$Omega, p, nlambda * p)
 time <- res$time
