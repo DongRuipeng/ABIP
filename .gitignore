@@ -1,6 +1,5 @@
 *.o
 *.pdf
-*.dll
 *.a
 *.rda
 *.Rproj.user
@@ -17,5 +16,4 @@
 *.toc
 *.mat
 *.exe
-*.mexw64
 *.RData
